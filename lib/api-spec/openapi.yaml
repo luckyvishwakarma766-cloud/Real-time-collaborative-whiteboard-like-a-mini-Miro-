@@ -1,0 +1,205 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Collaborative Whiteboard API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: rooms
+    description: Whiteboard room operations
+  - name: elements
+    description: Canvas element operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /rooms:
+    post:
+      operationId: createRoom
+      tags: [rooms]
+      summary: Create a new whiteboard room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomInput"
+      responses:
+        "201":
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+  /rooms/{roomId}:
+    get:
+      operationId: getRoom
+      tags: [rooms]
+      summary: Get room info
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Room details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "404":
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /rooms/{roomId}/elements:
+    get:
+      operationId: getRoomElements
+      tags: [elements]
+      summary: Get all canvas elements in a room
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of canvas elements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanvasElement"
+        "404":
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: clearRoom
+      tags: [elements]
+      summary: Clear all elements in a room
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Room cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /rooms/{roomId}/stats:
+    get:
+      operationId: getRoomStats
+      tags: [rooms]
+      summary: Get room statistics (element counts by type)
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Room stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Room:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+    RoomInput:
+      type: object
+      properties:
+        name:
+          type: string
+    CanvasElement:
+      type: object
+      required: [id, roomId, type, data, createdAt]
+      properties:
+        id:
+          type: string
+        roomId:
+          type: string
+        type:
+          type: string
+          enum: [pen, rect, ellipse, arrow, text]
+        data:
+          type: string
+        createdAt:
+          type: string
+    RoomStats:
+      type: object
+      required: [totalElements, byType, activeUsers]
+      properties:
+        totalElements:
+          type: integer
+        activeUsers:
+          type: integer
+        byType:
+          type: object
+          properties:
+            pen:
+              type: integer
+            rect:
+              type: integer
+            ellipse:
+              type: integer
+            arrow:
+              type: integer
+            text:
+              type: integer
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
